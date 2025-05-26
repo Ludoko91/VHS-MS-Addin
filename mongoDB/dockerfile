@@ -1,0 +1,23 @@
+# Verwenden eines offiziellen Python-Laufzeit-Images als Basis
+FROM python:3.9-slim
+
+# Setzen des Arbeitsverzeichnisses im Container
+WORKDIR /app
+
+# Kopieren der Anforderungen-Datei in das Arbeitsverzeichnis
+COPY requirements.txt requirements.txt
+
+# Installieren der Python-Abhängigkeiten
+RUN pip install -r requirements.txt
+
+# Kopieren des aktuellen Verzeichnisses in das Arbeitsverzeichnis im Container
+COPY . .
+
+# Setzen der Umgebungsvariablen für Flask
+ENV FLASK_APP=app.py
+
+# Exponieren des Ports, auf dem die App läuft
+EXPOSE 5000
+
+# Starten der Flask-Anwendung
+CMD ["flask", "run", "--host=0.0.0.0"]

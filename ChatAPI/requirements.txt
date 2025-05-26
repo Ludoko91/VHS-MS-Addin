@@ -1,0 +1,9 @@
+flask==2.3.2
+vllm==0.6.4
+llama-index
+llama-index-agent-openai==0.4.0
+llama-index-llms-ollama==0.4.2
+llama-index-llms-openai==0.3.2
+llama-index-llms-openai-like==0.3.0
+pymongo
+flask-cors

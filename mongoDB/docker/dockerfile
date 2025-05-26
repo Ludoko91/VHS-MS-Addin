@@ -1,0 +1,15 @@
+# Verwenden eines offiziellen Python-Images als Basisimage
+FROM python:3.9-slim
+
+# Arbeitsverzeichnis im Container erstellen und setzen
+WORKDIR /app
+
+# Anforderungen kopieren und Abhängigkeiten installieren
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Das Skript in das Arbeitsverzeichnis kopieren
+COPY . .
+
+# Startbefehl für den Container
+CMD ["python", "app.py"]

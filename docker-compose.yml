@@ -1,0 +1,106 @@
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo_container
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - internal-network
+
+  flask_app:
+    build: 
+      context: ./mongoDB
+    container_name: mongodb_api
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+    networks:
+      - internal-network
+    depends_on:
+      - mongo
+
+  indexer:
+    build: 
+      context: ./mongoDB
+    container_name: indexer_container
+    depends_on:
+      - mongo
+    networks:
+      - internal-network
+    command: python init_faiss_index.py
+    volumes:
+      - ./data:/app/data
+
+  embedding_model:
+    build:
+      context: ./mongoDB/docker
+    container_name: embedding_model_api_container
+    networks:
+      - internal-network
+
+  compass:
+    image: mongoclient/mongoclient
+    container_name: compass_container
+    ports:
+      - 8081:3000
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo_container
+      - ME_CONFIG_MONGODB_PORT=27017
+    depends_on:
+      - mongo
+    networks:
+      - internal-network
+
+  chatapi:
+    image: chatapi
+    build:
+      context: ./ChatAPI
+    ports:
+      - 9000:2000
+
+    container_name: chatapi
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - ME_CONFIG_MONGODB_PORT=27017
+    networks:
+      - internal-network
+      - external-network
+    depends_on:
+      - mongo
+      
+  vllm:
+    image: vllm/vllm-openai:latest
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=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
+      - API_KEY=token-abc123
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    ipc: host
+    ports:
+      - "8000:8000"
+    command: >
+      --model meta-llama/Llama-3.2-3B-Instruct
+      --max_model_len 8192
+      --enable-prefix-caching
+      --gpu-memory-utilization 0.6
+      --api-key token-abc123
+    networks:
+      - internal-network
+      - external-network
+
+networks:
+  internal-network:
+    driver: bridge
+  external-network:
+    name: mynetwork
+    external: true
+
+volumes:
+  mongo_data:

@@ -1,0 +1,109 @@
+/* Allgemeine Stile */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Ausrichtung nach unten */
+    height: 100vh;
+}
+/* Container-Stil */
+#chat-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 1000px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+/* Chat-Box */
+#chat-box {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#chat-box::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chat-box::-webkit-scrollbar-thumb {
+    background: #6a11cb;
+    border-radius: 8px;
+}
+
+/* Nachrichten-Box */
+.user-message, .bot-message, .error-message {
+    border-radius: 8px;
+    padding: 10px;
+    color: #fff;
+    font-size: 0.9rem;
+    max-width: 80%;
+    word-wrap: break-word;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.user-message {
+    align-self: flex-end;
+    background: #6a11cb;
+}
+
+.bot-message {
+    align-self: flex-start;
+    background: #2575fc;
+}
+
+.error-message {
+    align-self: flex-start;
+    background: rgba(255, 0, 0, 0.7);
+}
+
+/* Input-Feld */
+#chat-input {
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 1rem;
+    flex: 1;
+    outline: none;
+}
+
+#chat-input::placeholder {
+    color: #aaa;
+}
+
+/* Senden-Button */
+#send-button {
+    background: #6a11cb;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#send-button:hover {
+    background: #4a0d9c;
+}
+
+/* Flexibles Layout */
+.input-container {
+    display: flex;
+    gap: 10px;
+}

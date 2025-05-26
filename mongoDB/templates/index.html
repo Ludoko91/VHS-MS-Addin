@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VHS Courses</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h1>VHS Courses</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Course Number</th>
+                <th>Information</th>
+                <th>Instructor</th>
+                <th>Description</th>
+                <th>Onesentance</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="courses">
+        </tbody>
+    </table>
+    <script>
+        $(document).ready(function() {
+            $.ajax({
+                url: '/api/courses',
+                method: 'GET',
+                success: function(data) {
+                    var courses = data;
+                    var tbody = $('#courses');
+                    tbody.empty();
+                    courses.forEach(function(course) {
+                        var row = '<tr>' +
+                            '<td>' + course.kursnr + '</td>' +
+                            '<td>' + course.vhs + '</td>' +
+                            '<td>' + course.kursleitung + '</td>' +
+                            '<td>' + course.description + '</td>' +
+                            '<td>' + course.onesentance + '</td>' +
+                            '<td>' + course.date + '</td>' +
+                            '<td>' + course.created + '</td>' +
+                            '</tr>';
+                        tbody.append(row);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

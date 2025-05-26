@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatfenster</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <div class="input-container">
+            <input type="text" id="chat-input" placeholder="Nachricht eingeben...">
+            <button id="send-button">Senden</button>
+        </div>
+    </div>
+    <script>
+        const chatHistory = [];
+
+        const scrollToBottom = () => {
+            const chatBox = document.getElementById("chat-box");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        document.getElementById("send-button").addEventListener("click", () => {
+            const input = document.getElementById("chat-input");
+            const message = input.value;
+
+            if (message.trim() === "") return;
+
+            // Nachricht im Chatverlauf speichern
+            chatHistory.push({ sender: "user", message });
+
+            const chatBox = document.getElementById("chat-box");
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.className = "user-message";
+            userMessageDiv.textContent = message;
+            chatBox.appendChild(userMessageDiv);
+
+            input.value = ""; // Eingabefeld leeren
+            scrollToBottom();
+
+            fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_message: message, chat_history: chatHistory})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const answer = data.answer || "Fehler beim Abrufen der Antwort.";
+
+                // Antwort im Chatverlauf speichern
+                chatHistory.push({ sender: "bot", message: answer });
+
+                const botMessageDiv = document.createElement("div");
+                botMessageDiv.className = "bot-message";
+                botMessageDiv.textContent = answer;
+                chatBox.appendChild(botMessageDiv);
+
+                scrollToBottom();
+            })
+            .catch(error => {
+                const errorMessageDiv = document.createElement("div");
+                errorMessageDiv.className = "error-message";
+                errorMessageDiv.textContent = `Fehler: ${error.message}`;
+                chatBox.appendChild(errorMessageDiv);
+
+                scrollToBottom();
+            });
+        });
+    </script>
+</body>
+</html>

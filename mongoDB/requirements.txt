@@ -1,0 +1,6 @@
+Flask
+pymongo
+dnspython
+numpy
+faiss-cpu
+requests
