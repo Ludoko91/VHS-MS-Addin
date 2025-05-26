@@ -70,8 +70,6 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama_container
-    ports:
-      - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     networks:
@@ -82,7 +80,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: all
+              count: 0
               capabilities: [gpu]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
@@ -95,7 +93,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: all
+              count: 1
               capabilities: [gpu]
     environment:
       - HUGGING_FACE_HUB_TOKEN=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
