@@ -56,7 +56,6 @@ services:
       context: ./ChatAPI
     ports:
       - 9000:2000
-
     container_name: chatapi
     environment:
       - MONGO_URI=mongodb://mongo:27017
@@ -66,7 +65,28 @@ services:
       - external-network
     depends_on:
       - mongo
+      - ollama
       
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_container
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - internal-network
+    command: serve
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+
   vllm:
     image: vllm/vllm-openai:latest
     runtime: nvidia
@@ -104,3 +124,4 @@ networks:
 
 volumes:
   mongo_data:
+  ollama_data:

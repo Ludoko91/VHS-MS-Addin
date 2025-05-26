@@ -12,7 +12,7 @@ from tools.relevant_llm import MQ
 
 
 model_id = "qwen2.5:14b"
-Settings.llm = Ollama(base_url="http://91.108.80.10:11434",api_key="token-abc123", model=model_id , request_timeout="60",temperature=0.1, is_function_calling_model=True)
+Settings.llm = Ollama(base_url="http://ollama:11434", api_key="token-abc123", model=model_id, request_timeout="60", temperature=0.1, is_function_calling_model=True)
 #Settings.llm = Ollama(base_url="http://192.168.178.57:11434",api_key="token-abc123", model=model_id , request_timeout="60",temperature=0.1, is_function_calling_model=True)
 
 
