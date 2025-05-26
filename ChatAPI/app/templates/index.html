@@ -1,78 +1,142 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatfenster</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>VHS Chat Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            margin-left: 20%;
+        }
+        .bot-message {
+            background-color: #e9ecef;
+            margin-right: 20%;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        #messageInput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <div id="chat-container">
-        <div id="chat-box"></div>
+    <div class="chat-container">
+        <h1>VHS Chat Interface</h1>
+        <div class="chat-messages" id="chatMessages"></div>
         <div class="input-container">
-            <input type="text" id="chat-input" placeholder="Nachricht eingeben...">
-            <button id="send-button">Senden</button>
+            <input type="text" id="messageInput" placeholder="Type your message here...">
+            <button onclick="sendMessage()">Send</button>
         </div>
     </div>
+
     <script>
-        const chatHistory = [];
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        let chatHistory = [];
 
-        const scrollToBottom = () => {
-            const chatBox = document.getElementById("chat-box");
-            chatBox.scrollTop = chatBox.scrollHeight;
-        };
-
-        document.getElementById("send-button").addEventListener("click", () => {
-            const input = document.getElementById("chat-input");
-            const message = input.value;
-
-            if (message.trim() === "") return;
-
-            // Nachricht im Chatverlauf speichern
-            chatHistory.push({ sender: "user", message });
-
-            const chatBox = document.getElementById("chat-box");
-            const userMessageDiv = document.createElement("div");
-            userMessageDiv.className = "user-message";
-            userMessageDiv.textContent = message;
-            chatBox.appendChild(userMessageDiv);
-
-            input.value = ""; // Eingabefeld leeren
-            scrollToBottom();
-
-            fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_message: message, chat_history: chatHistory})
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                const answer = data.answer || "Fehler beim Abrufen der Antwort.";
-
-                // Antwort im Chatverlauf speichern
-                chatHistory.push({ sender: "bot", message: answer });
-
-                const botMessageDiv = document.createElement("div");
-                botMessageDiv.className = "bot-message";
-                botMessageDiv.textContent = answer;
-                chatBox.appendChild(botMessageDiv);
-
-                scrollToBottom();
-            })
-            .catch(error => {
-                const errorMessageDiv = document.createElement("div");
-                errorMessageDiv.className = "error-message";
-                errorMessageDiv.textContent = `Fehler: ${error.message}`;
-                chatBox.appendChild(errorMessageDiv);
-
-                scrollToBottom();
-            });
+        // Allow sending message with Enter key
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
         });
+
+        function addMessage(message, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.textContent = message;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, true);
+            messageInput.value = '';
+
+            try {
+                const response = await fetch('http://9.108.10.10:2000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_message: message,
+                        chat_history: chatHistory,
+                        user_database: 'default' // You might want to make this configurable
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    addMessage('Error: ' + data.error, false);
+                } else {
+                    addMessage(data.answer, false);
+                    chatHistory.push({
+                        role: 'user',
+                        content: message
+                    });
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: data.answer
+                    });
+                }
+            } catch (error) {
+                addMessage('Error connecting to the server. Please try again.', false);
+                console.error('Error:', error);
+            }
+        }
     </script>
 </body>
-</html>
+</html> 

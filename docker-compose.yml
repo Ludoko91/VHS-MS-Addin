@@ -89,7 +89,7 @@ services:
       --model meta-llama/Llama-3.2-3B-Instruct
       --max_model_len 8192
       --enable-prefix-caching
-      --gpu-memory-utilization 0.6
+      --gpu-memory-utilization 0.5
       --api-key token-abc123
     networks:
       - internal-network
