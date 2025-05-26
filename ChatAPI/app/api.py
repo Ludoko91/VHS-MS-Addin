@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify,render_template
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+import requests
 
 import main as main 
 from tools import date_search
@@ -154,7 +155,27 @@ def set_user_database():
     else:
         return jsonify({"error": "Datenbankzuordnung konnte nicht gespeichert werden"}), 500
 
+@app.route('/api/chat', methods=['POST'])
+def proxy_chat():
+    try:
+        data = request.get_json()
+        chat_message = data.get('chat_message')
+        chat_history = data.get('chat_history', [])
+        user_database = data.get('user_database', 'default')
 
+        # Forward the request to the chat API
+        response = requests.post(
+            'http://chatapi:2000/api/chat',
+            json={
+                'chat_message': chat_message,
+                'chat_history': chat_history,
+                'user_database': user_database
+            }
+        )
+        
+        return response.json(), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=2000)
