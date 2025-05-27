@@ -13,8 +13,11 @@ services:
     container_name: mongodb_api
     environment:
       - MONGO_URI=mongodb://mongo:27017
+    ports:
+      - 2000:2000
     networks:
       - internal-network
+      - external-network
     depends_on:
       - mongo
 
