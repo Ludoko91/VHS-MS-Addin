@@ -17,7 +17,7 @@ COPY . .
 ENV FLASK_APP=app.py
 
 # Exponieren des Ports, auf dem die App läuft
-EXPOSE 5000
+EXPOSE 2000
 
 # Starten der Flask-Anwendung
 CMD ["flask", "run", "--host=0.0.0.0"]
