@@ -101,7 +101,7 @@ def add_course():
         return jsonify({"error": "Course already exists"}), 409
     
     # Add Vectors to FAISS-Index
-    vectors = course_data.get('metatags_vector', None)
+    vectors = course_data.get('metatags_vector')
     #if vectors is None or not all(isinstance(v, list) and len(v) == 768 for v in vectors):
         #return jsonify({"error": "A valid metatags_vector with vectors of 768 dimensions is required"}), 400
     
