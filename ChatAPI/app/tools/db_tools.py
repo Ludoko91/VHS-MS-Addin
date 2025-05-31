@@ -3,7 +3,6 @@ import os
 from datetime import datetime
 import requests
 
-import main
 
 class Simple_tools():
     def __init__(self,collection_id):    
