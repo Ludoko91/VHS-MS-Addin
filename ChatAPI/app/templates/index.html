@@ -110,11 +110,27 @@
             chatMessages.appendChild(botMessageDiv);
 
             try {
-                const eventSource = new EventSource(`/api/chat?message=${encodeURIComponent(message)}&chat_history=${encodeURIComponent(JSON.stringify(chatHistory))}&user_database=default`);
+                const eventSource = new EventSource(`/api/chat`);
 
+                let fullResponse = '';
+                
                 eventSource.onmessage = function(event) {
-                    botMessageDiv.textContent = event.data;
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    if (event.data === 'complete') {
+                        eventSource.close();
+                        // Add the complete response to chat history
+                        chatHistory.push({
+                            role: 'user',
+                            content: message
+                        });
+                        chatHistory.push({
+                            role: 'assistant',
+                            content: fullResponse
+                        });
+                    } else {
+                        fullResponse += event.data;
+                        botMessageDiv.textContent = fullResponse;
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
                 };
 
                 eventSource.onerror = function(error) {
@@ -122,19 +138,6 @@
                     eventSource.close();
                     botMessageDiv.textContent = 'Error connecting to the server. Please try again.';
                 };
-
-                // Add to chat history when the stream is complete
-                eventSource.addEventListener('complete', function(event) {
-                    chatHistory.push({
-                        role: 'user',
-                        content: message
-                    });
-                    chatHistory.push({
-                        role: 'assistant',
-                        content: event.data
-                    });
-                    eventSource.close();
-                });
 
             } catch (error) {
                 addMessage('Error connecting to the server. Please try again.', false);
