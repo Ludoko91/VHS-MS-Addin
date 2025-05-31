@@ -26,7 +26,7 @@ def index():
     return render_template('index.html')
 
 # API-Endpunkt:get all courses
-@app.route('/api/courses', methods=['GET'])
+@app.route('/v1/api/courses', methods=['GET'])
 def get_courses():
     courses = list(collection.find({}, {"_id": 0}))  # hide the _id-Feld
 
@@ -37,7 +37,7 @@ def get_courses():
     return jsonify(i)
 
 # API-Endpunkt: Find specific Course with kursnr
-@app.route('/api/courses/<kursnr>', methods=['GET'])
+@app.route('/v1/api/courses/<kursnr>', methods=['GET'])
 def get_course(kursnr):
     course = collection.find_one({"kursnr": kursnr.strip()}, {"_id": 0})
     if course:
@@ -46,7 +46,7 @@ def get_course(kursnr):
         return jsonify({"error": "Course not found"}), 404
     
 # API-Endpunkt: get all courses from that date
-@app.route('/api/courses/date/<date>', methods=['GET'])
+@app.route('/v1/api/courses/date/<date>', methods=['GET'])
 def get_courses_by_vhs(date):
     date = datetime.strptime(date, "%d%m%Y").strftime("%d.%m.%Y")
 
@@ -61,7 +61,7 @@ def get_courses_by_vhs(date):
         return jsonify({"error": "No courses found for the specified VHS"}), 404
 
 # API-Endpunkt: search for Course Number
-@app.route('/api/courses/<kursnr>', methods=['PUT'])
+@app.route('/v1/api/courses/<kursnr>', methods=['PUT'])
 def update_course(kursnr):
     update_data = request.json
     result = collection.update_one({"kursnr": kursnr.strip()}, {"$set": update_data})
@@ -71,7 +71,7 @@ def update_course(kursnr):
         return jsonify({"error": "Course not found"}), 404
 
 # API-Endpunkt: keyword Vectorsearch via question vector
-@app.route('/api/courses/search', methods=['POST'])
+@app.route('/v1/api/courses/search', methods=['POST'])
 def search():
     input_question = request.json.get('question')
     input_vector = emb.text_embedding(input_question)
@@ -89,7 +89,7 @@ def search():
     return jsonify(results[:2])
 
 # API-Endpunkt: Add course to Database
-@app.route('/api/courses', methods=['POST'])
+@app.route('/v1/api/courses', methods=['POST'])
 def add_course():
     course_data = request.json
     if 'kursnr' not in course_data:
@@ -119,7 +119,7 @@ def add_course():
     return jsonify({"message": "Course added successfully"}), 201
 
 # API-Endpunkt: Delete course
-@app.route('/api/courses/<kursnr>', methods=['DELETE'])
+@app.route('/v1/api/courses/<kursnr>', methods=['DELETE'])
 def delete_course(kursnr):
     result = collection.delete_one({"kursnr": kursnr.strip()})
     if result.deleted_count > 0:
@@ -130,7 +130,7 @@ def delete_course(kursnr):
 
 
 # API-Endpunkt: Vectorsearch via new vector
-@app.route('/api/courses/search1', methods=['POST'])
+@app.route('/v1/api/courses/search1', methods=['POST'])
 def search1():
     input_vector = request.json.get('vector')
     if input_vector is None or len(input_vector) != 768:
