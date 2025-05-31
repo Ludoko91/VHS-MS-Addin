@@ -5,7 +5,6 @@ import requests
 from pymongo import MongoClient
 import os
 
-import main
  
 #questions = ["Ich habe Rückenschmerzen! Können Sie mir einen Kurs empfehlen?", "Ich habe eine Kopfverkrampfung! Können Sie mir einen Kurs empfehlen?", "Ich habe eine Kopfverkrampfung! Können Sie mir einen Kurs empfehlen?", "Ich habe eine Kopfverkrampfung! Können Sie mir einen Kurs empfehlen?"]
  
