@@ -46,7 +46,7 @@ def chat():
         # CORS-Header für Preflight-Anfragen
         response = jsonify({'message': 'Preflight OK'})
         response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        response.headers.add("Access-Control-Allow-Methods", "GET, OPTIONS")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         return response, 200
     try:
@@ -64,13 +64,19 @@ def chat():
                 chat_history = m.message_conveter(chat_history_messages)
                 print(f"chat history: {chat_history}")
                 for chunk in m.chatting_func(query, user_database, chat_history):
-                    yield f"data: {chunk}\n\n"
+                    if chunk:  # Only yield non-empty chunks
+                        yield f"data: {chunk}\n\n"
             else:
                 for chunk in m.chatting_func(query, user_database):
-                    yield f"data: {chunk}\n\n"
+                    if chunk:  # Only yield non-empty chunks
+                        yield f"data: {chunk}\n\n"
             yield "event: complete\ndata: complete\n\n"
 
-        return Response(stream_with_context(generate()), mimetype='text/event-stream')
+        response = Response(stream_with_context(generate()), mimetype='text/event-stream')
+        response.headers.add('Cache-Control', 'no-cache')
+        response.headers.add('Connection', 'keep-alive')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

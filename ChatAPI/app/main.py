@@ -40,13 +40,16 @@ def chatting_func(query, user_database, chat_history=None):
     )
     start_time = time.time()
     
-    # Get the response from the agent
-    response = agent.stream_chat(query)
+    # Get the streaming response from the agent
+    response_stream = agent.stream_chat(query)
     
-    # Split the response into chunks and yield them
-    chunks = response.split()
-    for chunk in chunks:
-        yield chunk + " "
+    # Yield each chunk from the stream
+    for response in response_stream:
+        if hasattr(response, 'response_gen'):
+            for chunk in response.response_gen:
+                yield chunk
+        else:
+            yield str(response)
     
     print("--- %s seconds ---" % (time.time() - start_time))
 
