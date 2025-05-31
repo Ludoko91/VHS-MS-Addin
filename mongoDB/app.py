@@ -112,7 +112,7 @@ def add_course():
             return jsonify({"error": "Failed to add vectors to FAISS index"}), 500
     except Exception as e:
         collection.insert_one(course_data)
-        return jsonify({"Add course, but error with FAISS-Index": str(e)}), 500
+        return jsonify({"Add course, but error with FAISS-Index": str(e)}), 202
     # Add course to Database
     collection.insert_one(course_data)
     
