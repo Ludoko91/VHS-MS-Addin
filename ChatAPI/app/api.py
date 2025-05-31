@@ -3,7 +3,15 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import requests
+from llama_index.core.tools import FunctionTool
+from llama_index.core.agent import ReActAgent
+from llama_index.core import Settings
+from llama_index.llms.ollama import Ollama
 import json
+from fastapi.responses import StreamingResponse
+
+from tools.db_tools import Simple_tools
+from tools.relevant_llm import MQ
 
 import main as main 
 from tools import date_search
@@ -21,6 +29,11 @@ d = date_search
 client = MongoClient("mongodb://mongo:27017")  # Passe den URI an deine Umgebung an
 db = client["vhs"]  # Name der Datenbank
 user_collection = db["users"]  # Name der Collection
+
+model_id = "qwen2.5:14b"
+Settings.llm = Ollama(base_url="http://ollama:11434", api_key="token-abc123", model=model_id, request_timeout="60", temperature=0.1, is_function_calling_model=True)
+
+
 
 
 @app.route('/')
@@ -42,44 +55,46 @@ def calculate_square():
     
 @app.route('/api/chat', methods=['GET'])
 def chat():
-    if request.method == 'OPTIONS':
-        # CORS-Header für Preflight-Anfragen
-        response = jsonify({'message': 'Preflight OK'})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Methods", "GET, OPTIONS")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-        return response, 200
     try:
-        query = request.args.get('message')
-        chat_history_messages = json.loads(request.args.get('chat_history', '[]'))
-        user_database = request.args.get('user_database', 'default')
+        data = request.get_json()
+        query = data.get('message')
+        chat_history_messages = json.loads(data.get('chat_history', '[]'))
+        user_database = data.get('user_database', 'default')
 
-        if not isinstance(query, (str)):
-            return jsonify({'error': 'Invalid chat_message, expected a string'}), 400
-        if not isinstance(chat_history_messages, (list)):
-            return jsonify({'error': 'Invalid chat_history, expected a list'}), 400
+        course_num_search_tool = FunctionTool.from_defaults(fn=st.course_num_search)
+        date_search_tool = FunctionTool.from_defaults(fn=st.date_search)
+        match_query_with_courses_tool = FunctionTool.from_defaults(fn=mq.match_query_with_courses)
 
-        def generate():
-            if len(chat_history_messages) == 0:
-                chat_history = m.message_conveter(chat_history_messages)
-                print(f"chat history: {chat_history}")
-                for chunk in m.chatting_func(query, user_database, chat_history):
-                    if chunk:  # Only yield non-empty chunks
-                        yield f"data: {chunk}\n\n"
-            else:
-                for chunk in m.chatting_func(query, user_database):
-                    if chunk:  # Only yield non-empty chunks
-                        yield f"data: {chunk}\n\n"
-            yield "event: complete\ndata: complete\n\n"
-
-        response = Response(stream_with_context(generate()), mimetype='text/event-stream')
-        response.headers.add('Cache-Control', 'no-cache')
-        response.headers.add('Connection', 'keep-alive')
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
-
+        agent = ReActAgent.from_tools(
+                tools=[date_search_tool, course_num_search_tool, match_query_with_courses_tool],
+                chat_history=chat_history_messages,
+                verbose=True
+        )
+        st = Simple_tools(user_database)
+        mq = MQ(user_database)
+        async def generate():
+                print("Generating")
+                try:
+                    if query != "":
+                        response = agent.stream_chat(message=query, chat_history=chat_history_messages)
+                        for token in response.response_gen:
+                            yield f"data: {token}\n\n"
+                    else:
+                        response = agent.chat(message=query, chat_history=chat_history_messages)
+                        yield f"data: {response}\n\n"
+                except Exception as e:
+                    print(f"Error in stream: {str(e)}")
+                    yield f"data: Error: {str(e)}\n\n"
+                    yield "data: [DONE]\n\n"
+            
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream"
+        )        
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"An unexpected error occurred during chat_stream: {e}")
+        return {"success": False, "error": str(e)}
+    
     
 @app.route('/process-email', methods=['POST'])
 def process_email():

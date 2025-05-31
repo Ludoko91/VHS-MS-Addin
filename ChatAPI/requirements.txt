@@ -7,3 +7,5 @@ llama-index-llms-openai==0.3.2
 llama-index-llms-openai-like==0.3.0
 pymongo
 flask-cors
+fastapi
+uvicorn
