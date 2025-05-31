@@ -99,18 +99,20 @@ def add_course():
     existing_course = collection.find_one({"kursnr": course_data["kursnr"].strip()})
     if existing_course:
         return jsonify({"error": "Course already exists"}), 409
-    
+    try:
     # Add Vectors to FAISS-Index
-    vectors = course_data.get('metatags_vector')
+        vectors = course_data.get('metatags_vector')
     #if vectors is None or not all(isinstance(v, list) and len(v) == 768 for v in vectors):
         #return jsonify({"error": "A valid metatags_vector with vectors of 768 dimensions is required"}), 400
     
-    # Versuche, die Vektoren dem FAISS-Index hinzuzufügen
-    success = add_vectors_to_faiss_indices(vectors, course_data["kursnr"].strip())
-    
-    if not success:
-        return jsonify({"error": "Failed to add vectors to FAISS index"}), 500
-
+        # Versuche, die Vektoren dem FAISS-Index hinzuzufügen
+        success = add_vectors_to_faiss_indices(vectors, course_data["kursnr"].strip())
+        
+        if not success:
+            return jsonify({"error": "Failed to add vectors to FAISS index"}), 500
+    except Exception as e:
+        collection.insert_one(course_data)
+        return jsonify({"Add course, but error with FAISS-Index": str(e)}), 500
     # Add course to Database
     collection.insert_one(course_data)
     
