@@ -53,7 +53,7 @@ def calculate_square():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-@app.route('/api/chat', methods=['GET'])
+@app.route('/api/chat', methods=['POST'])
 def chat():
     try:
         data = request.get_json()
