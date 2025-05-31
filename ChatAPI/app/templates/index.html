@@ -104,34 +104,38 @@
             addMessage(message, true);
             messageInput.value = '';
 
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_message: message,
-                        chat_history: chatHistory,
-                        user_database: 'default' // You might want to make this configurable
-                    })
-                });
+            // Create a new message div for the bot's response
+            const botMessageDiv = document.createElement('div');
+            botMessageDiv.className = 'message bot-message';
+            chatMessages.appendChild(botMessageDiv);
 
-                const data = await response.json();
-                
-                if (data.error) {
-                    addMessage('Error: ' + data.error, false);
-                } else {
-                    addMessage(data.answer, false);
+            try {
+                const eventSource = new EventSource(`/api/chat?message=${encodeURIComponent(message)}&chat_history=${encodeURIComponent(JSON.stringify(chatHistory))}&user_database=default`);
+
+                eventSource.onmessage = function(event) {
+                    botMessageDiv.textContent = event.data;
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                };
+
+                eventSource.onerror = function(error) {
+                    console.error('EventSource failed:', error);
+                    eventSource.close();
+                    botMessageDiv.textContent = 'Error connecting to the server. Please try again.';
+                };
+
+                // Add to chat history when the stream is complete
+                eventSource.addEventListener('complete', function(event) {
                     chatHistory.push({
                         role: 'user',
                         content: message
                     });
                     chatHistory.push({
                         role: 'assistant',
-                        content: data.answer
+                        content: event.data
                     });
-                }
+                    eventSource.close();
+                });
+
             } catch (error) {
                 addMessage('Error connecting to the server. Please try again.', false);
                 console.error('Error:', error);

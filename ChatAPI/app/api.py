@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify,render_template
+from flask import Flask, request, jsonify,render_template, Response, stream_with_context
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import requests
+import json
 
 import main as main 
 from tools import date_search
@@ -39,7 +40,7 @@ def calculate_square():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-@app.route('/api/chat', methods=['POST'])
+@app.route('/api/chat', methods=['GET'])
 def chat():
     if request.method == 'OPTIONS':
         # CORS-Header für Preflight-Anfragen
@@ -49,24 +50,27 @@ def chat():
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         return response, 200
     try:
-        data = request.get_json()
-        query = data['chat_message']
-        chat_history_messages = data['chat_history']
-        user_database = data["user_database"]
+        query = request.args.get('message')
+        chat_history_messages = json.loads(request.args.get('chat_history', '[]'))
+        user_database = request.args.get('user_database', 'default')
 
         if not isinstance(query, (str)):
             return jsonify({'error': 'Invalid chat_message, expected a string'}), 400
         if not isinstance(chat_history_messages, (list)):
             return jsonify({'error': 'Invalid chat_history, expected a list'}), 400
 
-        if len(chat_history_messages) == 0:
-            chat_history = m.message_conveter(chat_history_messages)
-            print(f"chat history: {chat_history}")
-            answer = m.chatting_func(query,user_database,chat_history)
-            return jsonify({'message' : query, 'answer': str(answer)}), 200
-        else:
-            answer = m.chatting_func(query,user_database)
-            return jsonify({'message' : str(chat_history_messages), 'answer': str(answer)}), 200
+        def generate():
+            if len(chat_history_messages) == 0:
+                chat_history = m.message_conveter(chat_history_messages)
+                print(f"chat history: {chat_history}")
+                for chunk in m.chatting_func(query, user_database, chat_history):
+                    yield f"data: {chunk}\n\n"
+            else:
+                for chunk in m.chatting_func(query, user_database):
+                    yield f"data: {chunk}\n\n"
+            yield "event: complete\ndata: complete\n\n"
+
+        return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

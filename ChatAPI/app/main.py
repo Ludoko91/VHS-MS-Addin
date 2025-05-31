@@ -24,24 +24,31 @@ email_prompt_raw = (
 email_prompt_temp = PromptTemplate(email_prompt_raw)
 email_prompt = {"agent_worker:system_prompt":email_prompt_temp}
 
-def chatting_func(query,user_database,chat_history=None):
-
+def chatting_func(query, user_database, chat_history=None):
     st = Simple_tools(user_database)
     mq = MQ(user_database)
     #convert mehthod to tool
-    course_num_search_tool = FunctionTool.from_defaults(fn= st.course_num_search )
-    #course_relevance_tool = FunctionTool.from_defaults(fn= relevant_course_search )
-    date_search_tool = FunctionTool.from_defaults(fn= st.date_search )
-    #course_keyword_search_tool = FunctionTool.from_defaults(fn= course_keyword_search )
-    match_query_with_courses_tool = FunctionTool.from_defaults(fn= mq.match_query_with_courses )
-
+    course_num_search_tool = FunctionTool.from_defaults(fn=st.course_num_search)
+    date_search_tool = FunctionTool.from_defaults(fn=st.date_search)
+    match_query_with_courses_tool = FunctionTool.from_defaults(fn=mq.match_query_with_courses)
 
     #call agent with given tool
-    agent = ReActAgent.from_tools(tools=[date_search_tool,course_num_search_tool,match_query_with_courses_tool],chat_history=chat_history,verbose=True)
+    agent = ReActAgent.from_tools(
+        tools=[date_search_tool, course_num_search_tool, match_query_with_courses_tool],
+        chat_history=chat_history,
+        verbose=True
+    )
     start_time = time.time()
-    response = agent.chat(query)
+    
+    # Get the response from the agent
+    response = agent.stream_chat(query)
+    
+    # Split the response into chunks and yield them
+    chunks = response.split()
+    for chunk in chunks:
+        yield chunk + " "
+    
     print("--- %s seconds ---" % (time.time() - start_time))
-    return response
 
 def email_func(query_raw,user_database):
 
