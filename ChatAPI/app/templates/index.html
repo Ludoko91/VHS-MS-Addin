@@ -110,7 +110,7 @@
             chatMessages.appendChild(botMessageDiv);
 
             try {
-                const eventSource = new EventSource(`https://91.108.80.10/api/chat`, {
+                const eventSource = new EventSource(`https://91.108.80.10/api/chat?message=${encodeURIComponent(message)}&chat_history=${encodeURIComponent(JSON.stringify(chatHistory))}&user_database=default`, {
                     withCredentials: true,
                     rejectUnauthorized: false
                 });

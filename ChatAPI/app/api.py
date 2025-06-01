@@ -8,7 +8,6 @@ from llama_index.core.agent import ReActAgent
 from llama_index.core import Settings
 from llama_index.llms.ollama import Ollama
 import json
-from fastapi.responses import StreamingResponse
 
 from tools.db_tools import Simple_tools
 from tools.relevant_llm import MQ
@@ -53,14 +52,12 @@ def calculate_square():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-@app.route('/api/chat', methods=['POST'])
+@app.route('/api/chat', methods=['GET'])
 def chat():
     try:
-        
-        data = request.get_json()
-        query = data.get('message')
-        chat_history_messages = json.loads(data.get('chat_history', '[]'))
-        user_database = data.get('user_database', 'default')
+        query = request.args.get('message', '')
+        chat_history_messages = json.loads(request.args.get('chat_history', '[]'))
+        user_database = request.args.get('user_database', 'default')
 
         st = Simple_tools(user_database)
         mq = MQ(user_database)
@@ -75,28 +72,28 @@ def chat():
                 verbose=True
         )
         
-        async def generate():
-                print("Generating")
-                try:
-                    if query != "":
-                        response = agent.stream_chat(message=query, chat_history=chat_history_messages)
-                        for token in response.response_gen:
-                            yield f"data: {token}\n\n"
-                    else:
-                        response = agent.chat(message=query, chat_history=chat_history_messages)
-                        yield f"data: {response}\n\n"
-                except Exception as e:
-                    print(f"Error in stream: {str(e)}")
-                    yield f"data: Error: {str(e)}\n\n"
-                    yield "data: [DONE]\n\n"
+        def generate():
+            print("Generating")
+            try:
+                if query != "":
+                    response = agent.stream_chat(message=query, chat_history=chat_history_messages)
+                    for token in response.response_gen:
+                        yield f"data: {token}\n\n"
+                else:
+                    response = agent.chat(message=query, chat_history=chat_history_messages)
+                    yield f"data: {response}\n\n"
+            except Exception as e:
+                print(f"Error in stream: {str(e)}")
+                yield f"data: Error: {str(e)}\n\n"
+                yield "data: [DONE]\n\n"
             
-        return StreamingResponse(
-            generate(),
-            media_type="text/event-stream"
-        )        
+        return Response(
+            stream_with_context(generate()),
+            mimetype='text/event-stream'
+        )
     except Exception as e:
         print(f"An unexpected error occurred during chat_stream: {e}")
-        return {"success": False, "error": str(e)}
+        return jsonify({"success": False, "error": str(e)})
     
     
 @app.route('/process-email', methods=['POST'])
