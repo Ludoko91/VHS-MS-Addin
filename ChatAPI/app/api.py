@@ -56,12 +56,14 @@ def calculate_square():
 @app.route('/api/chat', methods=['POST'])
 def chat():
     try:
-        st = Simple_tools(user_database)
-        mq = MQ(user_database)
+        
         data = request.get_json()
         query = data.get('message')
         chat_history_messages = json.loads(data.get('chat_history', '[]'))
         user_database = data.get('user_database', 'default')
+
+        st = Simple_tools(user_database)
+        mq = MQ(user_database)
 
         course_num_search_tool = FunctionTool.from_defaults(fn=st.course_num_search)
         date_search_tool = FunctionTool.from_defaults(fn=st.date_search)
