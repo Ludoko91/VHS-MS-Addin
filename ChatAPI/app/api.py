@@ -7,6 +7,7 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.agent import ReActAgent
 from llama_index.core import Settings
 from llama_index.llms.ollama import Ollama
+from llama_index.core.llms import ChatMessage
 import json
 
 from tools.db_tools import Simple_tools
@@ -59,6 +60,14 @@ def chat():
         chat_history_messages = json.loads(request.args.get('chat_history', '[]'))
         user_database = request.args.get('user_database', 'default')
 
+        # Convert chat history to proper format
+        formatted_history = []
+        for msg in chat_history_messages:
+            if isinstance(msg, dict):
+                role = msg.get('role', 'user')
+                content = msg.get('content', '')
+                formatted_history.append(ChatMessage(role=role, content=content))
+
         st = Simple_tools(user_database)
         mq = MQ(user_database)
 
@@ -68,7 +77,7 @@ def chat():
 
         agent = ReActAgent.from_tools(
                 tools=[date_search_tool, course_num_search_tool, match_query_with_courses_tool],
-                chat_history=chat_history_messages,
+                chat_history=formatted_history,
                 verbose=True
         )
         
@@ -76,7 +85,7 @@ def chat():
             print("Generating")
             try:
                 if query != "":
-                    response = agent.stream_chat(message=query, chat_history=chat_history_messages)
+                    response = agent.stream_chat(message=query, chat_history=formatted_history)
                     # Handle the streaming response
                     for chunk in response.response_gen:
                         if isinstance(chunk, str):
@@ -87,7 +96,7 @@ def chat():
                             yield f"data: {content}\n\n"
                     yield "data: [DONE]\n\n"
                 else:
-                    response = agent.chat(message=query, chat_history=chat_history_messages)
+                    response = agent.chat(message=query, chat_history=formatted_history)
                     yield f"data: {response}\n\n"
                     yield "data: [DONE]\n\n"
             except Exception as e:
