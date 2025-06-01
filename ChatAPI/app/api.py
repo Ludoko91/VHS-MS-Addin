@@ -56,6 +56,8 @@ def calculate_square():
 @app.route('/api/chat', methods=['POST'])
 def chat():
     try:
+        st = Simple_tools(user_database)
+        mq = MQ(user_database)
         data = request.get_json()
         query = data.get('message')
         chat_history_messages = json.loads(data.get('chat_history', '[]'))
@@ -70,8 +72,7 @@ def chat():
                 chat_history=chat_history_messages,
                 verbose=True
         )
-        st = Simple_tools(user_database)
-        mq = MQ(user_database)
+        
         async def generate():
                 print("Generating")
                 try:
