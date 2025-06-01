@@ -110,7 +110,10 @@
             chatMessages.appendChild(botMessageDiv);
 
             try {
-                const eventSource = new EventSource(`/api/chat`);
+                const eventSource = new EventSource(`/api/chat`, {
+                    withCredentials: true,
+                    rejectUnauthorized: false
+                });
 
                 let fullResponse = '';
                 
