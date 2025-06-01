@@ -77,11 +77,19 @@ def chat():
             try:
                 if query != "":
                     response = agent.stream_chat(message=query, chat_history=chat_history_messages)
-                    for token in response.response_gen:
-                        yield f"data: {token}\n\n"
+                    # Handle the streaming response
+                    for chunk in response.response_gen:
+                        if isinstance(chunk, str):
+                            yield f"data: {chunk}\n\n"
+                        else:
+                            # If chunk is a response object, get its content
+                            content = chunk.response if hasattr(chunk, 'response') else str(chunk)
+                            yield f"data: {content}\n\n"
+                    yield "data: [DONE]\n\n"
                 else:
                     response = agent.chat(message=query, chat_history=chat_history_messages)
                     yield f"data: {response}\n\n"
+                    yield "data: [DONE]\n\n"
             except Exception as e:
                 print(f"Error in stream: {str(e)}")
                 yield f"data: Error: {str(e)}\n\n"
