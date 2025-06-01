@@ -21,7 +21,7 @@ emb = embedder()
 
 
 # Serve the index.html file
-@app.route('/v1/api')
+@app.route('/api')
 def index():
     return render_template('index.html')
 
