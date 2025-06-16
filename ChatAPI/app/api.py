@@ -9,6 +9,8 @@ from llama_index.core import Settings
 from llama_index.llms.ollama import Ollama
 from llama_index.core.llms import ChatMessage
 import json
+import os
+from flask import send_from_directory
 
 from tools.db_tools import Simple_tools
 from tools.relevant_llm import MQ
@@ -196,6 +198,14 @@ def set_user_database():
         return jsonify({"message": "Datenbankzuordnung erfolgreich gespeichert"}), 200
     else:
         return jsonify({"error": "Datenbankzuordnung konnte nicht gespeichert werden"}), 500
+    
+# Configure the assets directory
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'assets')
+
+@app.route('/assets/<path:filename>')
+def serve_asset(filename):
+    """Serve files from the assets directory."""
+    return send_from_directory(ASSETS_DIR, filename)
 
 
 if __name__ == '__main__':
