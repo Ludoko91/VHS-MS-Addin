@@ -150,3 +150,16 @@ button i {
 .chat-messages::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+.error-message {
+    background: #ff4444;
+    color: white;
+    align-self: center;
+    text-align: center;
+    max-width: 90%;
+    margin: 8px 0;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    animation: fadeIn 0.3s ease;
+}

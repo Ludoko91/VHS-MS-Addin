@@ -30,6 +30,7 @@
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         let chatHistory = [];
+        let currentEventSource = null;
 
         messageInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -45,9 +46,22 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'message error-message';
+            errorDiv.textContent = message;
+            chatMessages.appendChild(errorDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
         async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message) return;
+
+            // Close any existing EventSource connection
+            if (currentEventSource) {
+                currentEventSource.close();
+            }
 
             addMessage(message, true);
             messageInput.value = '';
@@ -57,24 +71,31 @@
             chatMessages.appendChild(botMessageDiv);
 
             try {
-                const eventSource = new EventSource(`https://91.108.80.10/api/chat?message=${encodeURIComponent(message)}&chat_history=${encodeURIComponent(JSON.stringify(chatHistory))}&user_database=default`, {
-                    withCredentials: true,
-                    rejectUnauthorized: false
-                });
+                // Use relative URL instead of absolute
+                const apiUrl = `/api/chat?message=${encodeURIComponent(message)}&chat_history=${encodeURIComponent(JSON.stringify(chatHistory))}&user_database=default`;
+                
+                currentEventSource = new EventSource(apiUrl);
 
                 let fullResponse = '';
+                let hasError = false;
                 
-                eventSource.onmessage = function(event) {
+                currentEventSource.onopen = function() {
+                    console.log('Connection established');
+                };
+
+                currentEventSource.onmessage = function(event) {
                     if (event.data === 'complete') {
-                        eventSource.close();
-                        chatHistory.push({
-                            role: 'user',
-                            content: message
-                        });
-                        chatHistory.push({
-                            role: 'assistant',
-                            content: fullResponse
-                        });
+                        currentEventSource.close();
+                        if (!hasError) {
+                            chatHistory.push({
+                                role: 'user',
+                                content: message
+                            });
+                            chatHistory.push({
+                                role: 'assistant',
+                                content: fullResponse
+                            });
+                        }
                     } else {
                         fullResponse += event.data;
                         botMessageDiv.textContent = fullResponse;
@@ -82,15 +103,22 @@
                     }
                 };
 
-                eventSource.onerror = function(error) {
+                currentEventSource.onerror = function(error) {
                     console.error('EventSource failed:', error);
-                    eventSource.close();
-                    botMessageDiv.textContent = 'Error connecting to the server. Please try again.';
+                    hasError = true;
+                    currentEventSource.close();
+                    
+                    // Remove the bot message div if there's an error
+                    if (botMessageDiv.parentNode) {
+                        botMessageDiv.parentNode.removeChild(botMessageDiv);
+                    }
+                    
+                    showError('Connection error. Please try again later.');
                 };
 
             } catch (error) {
-                addMessage('Error connecting to the server. Please try again.', false);
                 console.error('Error:', error);
+                showError('Failed to connect to the server. Please try again later.');
             }
         }
     </script>
